@@ -6,3 +6,10 @@ __pycache__/
 
 # Claude Code local settings (do not publish)
 .claude/
+
+# Environment and dependencies
+.env
+.env.local
+node_modules/
+dist/
+build/
