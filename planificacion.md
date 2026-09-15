@@ -351,4 +351,104 @@ flowchart TD
 | **Costo Total Mensual** | **$0.00 USD / mes** | **$0.00 USD / mes** | **100% Gratuito y Perpetuo** |
 
 ---
+
+## 7. Guía de Consumo Rápido & Primeros Pasos (Demo)
+
+**URL Base de Producción:** `https://exercises-dataset.danielvasquez.lat/api/v1`
+
+### 7.1. Pruebas Rápidas en el Navegador
+Puedes acceder directamente a cualquiera de los siguientes enlaces para visualizar las respuestas JSON:
+* **Ver primeros 5 ejercicios:** [`https://exercises-dataset.danielvasquez.lat/api/v1/exercises?limit=5`](https://exercises-dataset.danielvasquez.lat/api/v1/exercises?limit=5)
+* **Filtrar por pecho y mancuernas:** [`https://exercises-dataset.danielvasquez.lat/api/v1/exercises?body_part=chest&equipment=dumbbell`](https://exercises-dataset.danielvasquez.lat/api/v1/exercises?body_part=chest&equipment=dumbbell)
+* **Búsqueda por texto ("squat"):** [`https://exercises-dataset.danielvasquez.lat/api/v1/exercises/search?q=squat`](https://exercises-dataset.danielvasquez.lat/api/v1/exercises/search?q=squat)
+* **Ejercicio aleatorio para rutina:** [`https://exercises-dataset.danielvasquez.lat/api/v1/exercises/random`](https://exercises-dataset.danielvasquez.lat/api/v1/exercises/random)
+* **Lista de grupos musculares:** [`https://exercises-dataset.danielvasquez.lat/api/v1/body-parts`](https://exercises-dataset.danielvasquez.lat/api/v1/body-parts)
+
+---
+
+### 7.2. Consumo en JavaScript / Frontend (`fetch`)
+Snippet básico para consultar e imprimir los datos en la consola o renderizarlos en una UI:
+
+```javascript
+const API_URL = 'https://exercises-dataset.danielvasquez.lat/api/v1';
+
+async function obtenerEjercicios(musculo = '', limite = 10) {
+  try {
+    const params = new URLSearchParams({ limit: limite });
+    if (musculo) params.append('body_part', musculo);
+
+    const response = await fetch(`${API_URL}/exercises?${params.toString()}`);
+    const result = await response.json();
+
+    if (result.success) {
+      console.log(`Total encontrados: ${result.meta.total}`);
+      result.data.forEach(ejercicio => {
+        console.log(`- ${ejercicio.name} (${ejercicio.target})`);
+        console.log(`  Imagen: ${ejercicio.media.image_url}`);
+        console.log(`  GIF:    ${ejercicio.media.gif_url}`);
+      });
+    }
+  } catch (error) {
+    console.error('Error al consultar la API:', error);
+  }
+}
+
+// Ejemplo de uso:
+obtenerEjercicios('chest', 5);
+```
+
+---
+
+### 7.3. Ejemplo de Estructura de Tarjeta Visual (HTML / React)
+
+```html
+<article class="exercise-card">
+  <!-- Título y Objetivo -->
+  <header>
+    <h3>3/4 sit-up</h3>
+    <span class="badge">Abdominales (abs)</span>
+    <span class="badge">Peso corporal</span>
+  </header>
+
+  <!-- Multimedia optimizado desde Cloudinary -->
+  <div class="exercise-media">
+    <!-- Thumbnail ligero para vista previa -->
+    <img 
+      src="https://res.cloudinary.com/jlpjcazy/image/upload/v1789503834/exercises/images/0001-2gPfomN.jpg" 
+      alt="3/4 sit-up" 
+      loading="lazy" 
+      width="180" 
+      height="180" 
+    />
+    
+    <!-- Animación GIF (puede cargarse en hover o modal) -->
+    <img 
+      src="https://res.cloudinary.com/jlpjcazy/image/upload/v1789503835/exercises/videos/0001-2gPfomN.gif" 
+      alt="Demostración animada 3/4 sit-up" 
+      loading="lazy" 
+      width="180" 
+      height="180" 
+    />
+  </div>
+
+  <!-- Instrucciones en Español -->
+  <div class="instructions">
+    <p>Túmbate sobre tu espalda con las rodillas flexionadas y los pies apoyados en el suelo...</p>
+  </div>
+</article>
+```
+
+---
+
+### 7.4. Petición desde la Terminal (cURL)
+
+```bash
+# Consultar estado
+curl -s "https://exercises-dataset.danielvasquez.lat/api/v1/health"
+
+# Consultar ejercicios con paginación
+curl -s "https://exercises-dataset.danielvasquez.lat/api/v1/exercises?limit=2" | json_pp
+```
+
+---
 *Documento estructurado como guía de arquitectura técnica y planificación de sprints para la construcción de la API REST.*
