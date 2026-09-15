@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "test:connection": "node scripts/test-connection.js",
+    "test:api": "node scripts/test-api.js",
     "migrate:media": "node scripts/migrate-media.js",
     "seed:db": "node scripts/seed-database.js",
     "start": "node src/index.js"
