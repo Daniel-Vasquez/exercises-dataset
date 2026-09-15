@@ -451,4 +451,49 @@ curl -s "https://exercises-dataset.danielvasquez.lat/api/v1/exercises?limit=2" |
 ```
 
 ---
+
+## 8. Mantenimiento, Monitoreo y Solución de Problemas (Troubleshooting)
+
+Esta guía detalla las tareas preventivas, políticas de monitoreo y procedimientos de resolución inmediata en caso de anomalías o fallos en el servicio.
+
+### 8.1. Matriz de Diagnóstico Rápido de Errores
+
+| Síntoma / Error | Causa Probable | Solución Inmediata |
+| :--- | :--- | :--- |
+| **HTTP 503 en `/health`** o `Could not connect to any servers` | La regla de acceso IP en MongoDB Atlas (`0.0.0.0/0`) fue desactivada o expiró. | Ir a **MongoDB Atlas** -> *Network Access* -> Verificar que `0.0.0.0/0` esté en estado **Active**. |
+| **HTTP 500 (`bad auth`)** | Las credenciales (`MONGODB_URI`) cambiaron o la contraseña de BD fue modificada. | Actualizar la variable de entorno `MONGODB_URI` en Vercel (*Settings* -> *Environment Variables*) y realizar un *Redeploy*. |
+| **Imágenes / GIFs no cargan (HTTP 404 o 420)** | Límite mensual de créditos en Cloudinary alcanzado (25 créditos = 25 GB) o URL mal formada. | Revisar el panel de uso en Cloudinary (*Reports/Usage*). Asegurarse de que el frontend cargue GIFs únicamente bajo demanda (*hover/click*). |
+| **Latencia alta en la primera petición (~500ms)** | *Cold Start* natural de la función Serverless de Vercel tras un periodo de inactividad. | Comportamiento normal en arquitecturas serverless. Las peticiones subsecuentes responderán en < 30ms gracias a la memoria caché y al Edge CDN. |
+| **Cambios en la base de datos no se reflejan de inmediato** | Cabecera de Edge Cache (`s-maxage=86400`) activa en el CDN de Vercel por 24 horas. | Enviar una petición con parámetro único para evadir la caché (ej. `?nocache=1`) o esperar el ciclo de revalidación en segundo plano (*stale-while-revalidate*). |
+
+---
+
+### 8.2. Mantenimiento de Servicios en Capa Gratuita (Free Tiers)
+
+#### 🍃 MongoDB Atlas (M0 Sandbox)
+* **Pausa por Inactividad:** MongoDB Atlas suspende automáticamente los clusters M0 si no reciben lecturas ni escrituras durante **60 días consecutivos**.
+  * *Acción de Mantenimiento:* Si recibes un correo de aviso de inactividad de MongoDB, basta con ingresar a [`/api/v1/health`](https://exercises-dataset.danielvasquez.lat/api/v1/health) o configurar un servicio gratuito de monitoreo (como *UptimeRobot* o *Cron-Job.org*) que consulte la API cada 1 o 2 semanas.
+* **Pool de Conexiones:** El cluster M0 soporta un máximo de 500 conexiones simultáneas. La API utiliza un patrón *Singleton con caché global* (`src/config/db.js`), por lo que el consumo habitual de conexiones se mantiene entre **1 y 5 conexiones activas**.
+
+#### ☁️ Cloudinary (Optimización de Ancho de Banda)
+* **Cuota Gratuita:** 25 créditos mensuales (~25,000 transformaciones o 25 GB de transferencia neta).
+* **Buenas Prácticas para el Frontend:**
+  1. Utilizar **Lazy Loading** nativo en el cliente (`<img loading="lazy" ... />`).
+  2. Mostrar siempre la imagen fija (`media.image_url`) por defecto en los listados.
+  3. Cargar la animación pesada (`media.gif_url`) **únicamente** cuando el usuario abra el detalle del ejercicio o pase el cursor por encima (*hover*). Esto reduce el consumo de ancho de banda en más de un **85%**.
+
+#### ⚡ Vercel (Edge CDN & Serverless)
+* **Logs en Tiempo Real:** Para depurar cualquier error no capturado, ve a tu panel de Vercel -> selecciona el proyecto -> pestaña **Logs**.
+* **Revalidación de Despliegues:** Cada vez que hagas un cambio en el código y ejecutes `git push origin main`, Vercel compilará y desplegará la nueva versión automáticamente sin tiempo de inactividad (*Zero Downtime Deployment*).
+
+---
+
+### 8.3. Cómo Actualizar o Agregar Nuevos Ejercicios en el Futuro
+
+Si decides incorporar más ejercicios al catálogo:
+1. Sube los nuevos archivos a Cloudinary (manualmente o mediante una extensión de `scripts/migrate-media.js`).
+2. Agrega el nuevo registro a MongoDB Atlas usando Mongoose o re-ejecutando `npm run seed:db` con el nuevo archivo JSON.
+3. Los nuevos ejercicios estarán disponibles de forma inmediata en todos los endpoints (`/exercises`, `/search`, `/random`, etc.).
+
+---
 *Documento estructurado como guía de arquitectura técnica y planificación de sprints para la construcción de la API REST.*
